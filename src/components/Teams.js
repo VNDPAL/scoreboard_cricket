@@ -6,14 +6,14 @@ import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
-import { CalendarToday } from '@material-ui/icons';
+// import { CalendarToday } from '@material-ui/icons';
 import ButtonBase from '@material-ui/core/ButtonBase';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Switch from '@material-ui/core/Switch';
-import { useHistory } from 'react-router-dom';
-import TextField from '@material-ui/core/TextField';
-import Button from '@material-ui/core/Button';
-import MenuItem from '@material-ui/core/MenuItem';
+// import FormControlLabel from '@material-ui/core/FormControlLabel';
+// import Switch from '@material-ui/core/Switch';
+// import { useHistory } from 'react-router-dom';
+// import TextField from '@material-ui/core/TextField';
+// import Button from '@material-ui/core/Button';
+// import MenuItem from '@material-ui/core/MenuItem';
 import GradeIcon from '@material-ui/icons/Grade';
 
 const useStyles = makeStyles(theme => ({
@@ -144,18 +144,18 @@ export default function Teams(props) {
     const [listTournaments, setListTournaments] = React.useState([]);
     const [hideEnded, setHideEnded] = React.useState(false);
     const [pageTitle, setPageTitle] = React.useState('Teams');
-    const tournaments = [{ label: 'T1', value: 't1' }, { label: 'T2', value: 't2' }]
+    // const tournaments = [{ label: 'T1', value: 't1' }, { label: 'T2', value: 't2' }]
 
     React.useEffect(() => {
         setListTournaments(data);
         if (props.location.state) {
             setPageTitle(props.location.state.name);
         }
-    }, []);
+    }, [props.location]);
 
-    const handleChange = e => {
-        setHideEnded(p => !p)
-    }
+    // const handleChange = e => {
+    //     setHideEnded(p => !p)
+    // }
 
     const handleCardClick = (e, tdata) => {
         props.history.push({

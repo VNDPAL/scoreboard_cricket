@@ -12,7 +12,7 @@ import RadioGroup from '@material-ui/core/RadioGroup';
 import FormControlLabel from '@material-ui/core/FormControlLabel';
 import FormControl from '@material-ui/core/FormControl';
 import FormLabel from '@material-ui/core/FormLabel';
-import FormHelperText from '@material-ui/core/FormHelperText';
+// import FormHelperText from '@material-ui/core/FormHelperText';
 import FormGroup from '@material-ui/core/FormGroup';
 import Switch from '@material-ui/core/Switch';
 import Button from '@material-ui/core/Button';
@@ -156,45 +156,11 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
-const data = [
-    { id: '1', team1: 'RCB', team2: 'MI', startTime: '10/01/2020', tournament: 'Tournament-1', contestCount: 4 },
-    { id: '2', team1: 'DC', team2: 'SRH', startTime: '10/01/2020', tournament: 'Tournament-1', contestCount: 2 },
-    { id: '3', team1: 'KXIP', team2: 'RR', startTime: '10/01/2020', tournament: 'Tournament-1', contestCount: 1 }
-]
-
-const MtCard = props => {
-    const classes = useStyles();
-    return (
-        <Grid item xs={12} sm={6} md={4}>
-            <ButtonBase className={classes.w100}>
-                <Card className={classes.root} onClick={e => (props.onCardClick(e, props))}>
-                    <CardContent className={classes.cardContent}>
-                        <div className={classes.mCardTournament}>
-                            {props.tournament}
-                        </div>
-                        <div className={classes.matchTeams}>
-                            <Typography className={classes.title} color="textSecondary" gutterBottom>
-                                {props.team1}
-                            </Typography>
-                            <span className={classes.timeLeft}>10:20:00</span>
-                            <Typography className={classes.title} color="textSecondary" gutterBottom>
-                                {props.team2}
-                            </Typography>
-                        </div>
-                        <div className={classes.mCardFoot}>
-                            <b>{props.contestCount}</b> Contests
-                        </div>
-                    </CardContent>
-                </Card>
-            </ButtonBase>
-        </Grid>
-    )
-}
 
 export default function Match(props) {
     const classes = useStyles();
-    const [listTournaments, setListTournaments] = React.useState([]);
-    const [hideEnded, setHideEnded] = React.useState(false);
+    // const [listTournaments, setListTournaments] = React.useState([]);
+    // const [hideEnded, setHideEnded] = React.useState(false);
     const [pageTitle, setPageTitle] = React.useState('Match');
     const [value, setValue] = React.useState(0);
     const [isWide, setIsWide] = React.useState(false);
@@ -206,15 +172,15 @@ export default function Match(props) {
         // setListTournaments(data);
         setPageTitle(`${props.location.state.team1} vs ${props.location.state.team2}`)
         console.log('[location]', props.location)
-    }, []);
+    }, [props.location]);
 
     const handleChange = e => {
         setValue(e.target.value)
     }
 
-    const handleCardClick = (e, tdata) => {
-        // history.push('/match')
-    }
+    // const handleCardClick = (e, tdata) => {
+    //     // history.push('/match')
+    // }
 
     return (
         <>

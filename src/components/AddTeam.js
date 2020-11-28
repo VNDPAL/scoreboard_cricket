@@ -5,7 +5,7 @@ import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
-import MenuItem from '@material-ui/core/MenuItem';
+// import MenuItem from '@material-ui/core/MenuItem';
 
 const useStyles = makeStyles(theme => ({
     pageRoot: {
@@ -29,7 +29,7 @@ const useStyles = makeStyles(theme => ({
 
 export default function AddTeam(props) {
     const classes = useStyles();
-    const players = [{ label: 'delhi capitals', value: 'DC' }, { label: 'mumbai indians', value: 'MI' }];
+    // const players = [{ label: 'delhi capitals', value: 'DC' }, { label: 'mumbai indians', value: 'MI' }];
 
     React.useEffect(() => {
 

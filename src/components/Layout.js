@@ -23,12 +23,9 @@ const Match = React.lazy(() => import('./Match'));
 const Home = React.lazy(() => import('./Home'));
 
 export default function Layout(props) {
-    const [showLoader, setShowLoader] = React.useState(false);
-    const classes = useStyles();
+    // const [showLoader, setShowLoader] = React.useState(false);
+    // const classes = useStyles();
 
-    React.useEffect(() => {
-
-    }, []);
     console.log('[layout]', props)
 
     return (
