@@ -145,7 +145,7 @@ const PlayerCard = props => {
 export default function Players(props) {
     const classes = useStyles();
     const [listTournaments, setListTournaments] = React.useState([]);
-    const [hideEnded, setHideEnded] = React.useState(false);
+    const [hideEnded] = React.useState(false);
     const [pageTitle, setPageTitle] = React.useState('Players');
     const tournaments = [{ label: 'T1', value: 't1' }, { label: 'T2', value: 't2' }]
 

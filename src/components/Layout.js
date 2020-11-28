@@ -3,11 +3,11 @@ import { Route, Switch, Redirect } from 'react-router-dom';
 import Loader from '../commons/Loader';
 import { makeStyles } from '@material-ui/core/styles';
 
-const useStyles = makeStyles((theme) => ({
-    root: {
-        flexGrow: 1,
-    },
-}));
+// const useStyles = makeStyles((theme) => ({
+//     root: {
+//         flexGrow: 1,
+//     },
+// }));
 
 const Tournaments = React.lazy(() => import('./Tournaments'));
 const AddTournaments = React.lazy(() => import('./AddTournament'));
