@@ -170,7 +170,7 @@ export default function Players(props) {
                 return (listPlayer.filter(d => (d.player_team_name === team)))
             })
         }
-    }, [team]);
+    }, [team, listPlayer]);
 
     console.log('[render]', team, listPlayer)
 
