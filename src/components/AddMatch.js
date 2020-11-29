@@ -6,10 +6,15 @@ import Paper from '@material-ui/core/Paper';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import MenuItem from '@material-ui/core/MenuItem';
+import { multiCall, postCall } from '../lib/requests';
+import { GET_TOURNAMENT, GET_TEAMS, SAVE_MATCH } from '../lib/constants';
+import { format } from 'date-fns';
 
 const useStyles = makeStyles(theme => ({
     pageRoot: {
-        padding: '1rem'
+        padding: '1rem',
+        maxWidth: '640px',
+        margin: '0 auto'
     },
     root: {
         position: 'relative',
@@ -26,18 +31,70 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
+async function apiCall(urls) {
+    const res = multiCall(urls).then(r => {
+        console.log('[response]', r)
+        return (r.map(d => (d.status && d.value.success && d.value.res)))
+    });
+    return res;
+}
+
+async function apiCallSave(url, pl) {
+    const res = await postCall(url, pl).then(r => {
+        return (true)
+    });
+    return res;
+}
 
 export default function AddMatch(props) {
     const classes = useStyles();
-    const teams = [{ label: 'delhi capitals', value: 'DC' }, { label: 'mumbai indians', value: 'MI' }]
-    const tournaments = [{ label: 'T1', value: 't1' }, { label: 'T2', value: 't2' }]
+    const [listTeam, setListTeam] = React.useState([]);
+    const [listTrn, setListTrn] = React.useState([]);
+    const [payload, setPayload] = React.useState({
+        tournamentId: '',
+        matchDate: format(new Date(), "yyyy-MM-dd'T'hh:mm"),
+        team1: '',
+        team2: ''
+    });
 
     React.useEffect(() => {
-
+        const apiRes = apiCall([GET_TEAMS(), GET_TOURNAMENT()]);
+        apiRes.then(res => {
+            const teams = res[0].map(d => ({ label: d.team_name, value: d.team_name }));
+            const trn = res[1].map(d => ({ label: d.tournament_name, value: d._id }));
+            setListTrn(trn);
+            setListTeam(teams);
+        })
     }, []);
 
-    const handleSubmit = () => {
+    const handleChange = (val, type) => {
+        setPayload(o => {
+            switch (type) {
+                case 'tournamentId': return ({ ...o, ...{ tournamentId: val } });
+                case 'matchDate': return ({ ...o, ...{ matchDate: val } });
+                case 'team1': return ({ ...o, ...{ team1: val } });
+                case 'team2': return ({ ...o, ...{ team2: val } });
+                default: return (o)
+            }
+        })
+    }
 
+    const handleSubmit = () => {
+        const pl = {
+            tournamentId: payload.tournamentId,
+            matchDate: format(new Date(payload.matchDate), "MM-dd-yyyy hh:mm"),
+            team1: payload.team1,
+            team2: payload.team2
+        }
+        const postRes = apiCallSave(SAVE_MATCH(), pl);
+        postRes.then((d) => {
+            console.log('[respmpost]', d)
+            if (d) {
+                props.history.push({
+                    pathname: '/matches'
+                });
+            }
+        });
     }
 
     return (
@@ -54,13 +111,17 @@ export default function AddMatch(props) {
                             select
                             fullWidth
                             size="small"
+                            value={payload.team1}
+                            onChange={(e) => handleChange(e.target.value, 'team1')}
                         >
                             {
-                                teams.map(option => (
-                                    <MenuItem key={option.value} value={option.value}>
-                                        {option.label}
-                                    </MenuItem>
-                                ))
+                                listTeam.map(option => {
+                                    return ((option.value !== payload.team2) ? (
+                                        <MenuItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </MenuItem>
+                                    ) : null)
+                                })
                             }
                         </TextField>
                         <TextField
@@ -71,13 +132,17 @@ export default function AddMatch(props) {
                             select
                             fullWidth
                             size="small"
+                            value={payload.team2}
+                            onChange={(e) => handleChange(e.target.value, 'team2')}
                         >
                             {
-                                teams.map(option => (
-                                    <MenuItem key={option.value} value={option.value}>
-                                        {option.label}
-                                    </MenuItem>
-                                ))
+                                listTeam.map(option => {
+                                    return ((option.value !== payload.team1) ? (
+                                        <MenuItem key={option.value} value={option.value}>
+                                            {option.label}
+                                        </MenuItem>
+                                    ) : null)
+                                })
                             }
                         </TextField>
                         <TextField
@@ -88,9 +153,11 @@ export default function AddMatch(props) {
                             select
                             fullWidth
                             size="small"
+                            value={payload.tournamentId}
+                            onChange={(e) => handleChange(e.target.value, 'tournamentId')}
                         >
                             {
-                                tournaments.map(option => (
+                                listTrn.map(option => (
                                     <MenuItem key={option.value} value={option.value}>
                                         {option.label}
                                     </MenuItem>
@@ -101,7 +168,6 @@ export default function AddMatch(props) {
                             id="endDate"
                             label="Start Time"
                             type="datetime-local"
-                            defaultValue={Date.now()}
                             className={classes.textField}
                             InputLabelProps={{
                                 shrink: true,
@@ -109,6 +175,8 @@ export default function AddMatch(props) {
                             variant='outlined'
                             fullWidth
                             size="small"
+                            onChange={(e) => handleChange(e.target.value, 'matchDate')}
+                            value={format(new Date(payload.matchDate), "yyyy-MM-dd'T'hh:mm")}
                         />
 
 

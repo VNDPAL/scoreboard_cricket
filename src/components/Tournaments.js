@@ -8,13 +8,17 @@ import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
 import { CalendarToday } from '@material-ui/icons';
 import ButtonBase from '@material-ui/core/ButtonBase';
-import FormControlLabel from '@material-ui/core/FormControlLabel';
-import Switch from '@material-ui/core/Switch';
-// import { useHistory } from 'react-router-dom';
+// import FormControlLabel from '@material-ui/core/FormControlLabel';
+// import Switch from '@material-ui/core/Switch';
+import { getCall } from '../lib/requests';
+import { GET_TOURNAMENT } from '../lib/constants';
+import { format } from 'date-fns';
 
 const useStyles = makeStyles(theme => ({
     pageRoot: {
-        padding: '1rem'
+        padding: '1rem',
+        maxWidth: '640px',
+        margin: '0 auto'
     },
     root: {
         position: 'relative',
@@ -75,12 +79,6 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
-const data = [
-    { id: '1', name: 'Tournament-1', type: '66', startDate: '01/12/2020', endDate: '12/12/2020', status: 'upcoming' },
-    { id: '2', name: 'Tournament-2', type: '66', startDate: '01/12/2021', endDate: '12/12/2021', status: 'ongoing' },
-    { id: '3', name: 'Tournament-3', type: '66', startDate: '01/11/2020', endDate: '12/11/2020', status: 'ended' }
-]
-
 const TnCard = props => {
     const classes = useStyles();
     return (
@@ -89,10 +87,10 @@ const TnCard = props => {
                 <Card className={classes.root} onClick={e => (props.onCardClick(e, props))}>
                     <CardContent className={classes.cardContent}>
                         <Typography className={classes.title} color="textSecondary" gutterBottom>
-                            {props.name}
+                            {props.tournament_name}
                         </Typography>
                         <div className={classes.scheduleText}>
-                            <CalendarToday className={classes.txtIcon} /> {props.startDate || ' - '} - {props.endDate || ' - '}
+                            <CalendarToday className={classes.txtIcon} /> {format(new Date(props.startDate), 'dd/MM/yyyy') || ' - '} - {format(new Date(props.endDate), 'dd/MM/yyyy') || ' - '}
                         </div>
                     </CardContent>
                 </Card>
@@ -101,24 +99,38 @@ const TnCard = props => {
     )
 }
 
+async function apiCall(url) {
+    const apiRes = getCall(url).then(r => {
+        console.log('response', r);
+        return (r.success ? r.data : null)
+    })
+    return apiRes;
+}
+
 export default function Tournaments(props) {
     const classes = useStyles();
     const [listTournaments, setListTournaments] = React.useState([]);
-    const [hideEnded, setHideEnded] = React.useState(false);
+    const [hideEnded] = React.useState(false);
 
     React.useEffect(() => {
-        setListTournaments(data);
+        const response = apiCall(GET_TOURNAMENT());
+        response.then(data => {
+            console.log('[respdata]', data)
+            if (data) {
+                setListTournaments(data);
+            }
+        })
     }, []);
 
-    const handleChange = e => {
-        setHideEnded(p => !p)
-    }
+    // const handleChange = e => {
+    //     setHideEnded(p => !p)
+    // }
 
     const handleCardClick = (e, tdata) => {
         props.history.push({
             pathname: '/matches',
             state: {
-                name: tdata.name
+                name: tdata.tournament_name
             }
         });
     }
@@ -128,7 +140,7 @@ export default function Tournaments(props) {
             <Header title='Tournaments' rightLink={{ to: '/tournaments/add', label: 'add' }} />
             <div className={classes.pageRoot}>
                 <div className={classes.filterRow}>
-
+                    {/* 
                     <FormControlLabel
                         control={
                             <Switch
@@ -139,15 +151,15 @@ export default function Tournaments(props) {
                             />
                         }
                         label="Hide Completed"
-                    />
+                    /> */}
                 </div>
                 <Grid container spacing={3}>
                     {
                         listTournaments.map(item => {
                             if (hideEnded) {
-                                return (item.status !== 'ended' ? (<TnCard key={item.id} {...item} onCardClick={handleCardClick} />) : null)
+                                return (item.status !== 'ended' ? (<TnCard key={item._id} {...item} onCardClick={handleCardClick} />) : null)
                             } else {
-                                return (<TnCard key={item.id} {...item} onCardClick={handleCardClick} />)
+                                return (<TnCard key={item._id} {...item} onCardClick={handleCardClick} />)
                             }
                         })
                     }

@@ -9,7 +9,9 @@ import ScoreCard from './ScoreCard';
 
 const useStyles = makeStyles(theme => ({
     pageRoot: {
-        padding: '1rem'
+        padding: '1rem',
+        maxWidth: '640px',
+        margin: '0 auto'
     },
     root: {
         position: 'relative',

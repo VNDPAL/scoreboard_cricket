@@ -6,18 +6,17 @@ import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
-// import { CalendarToday } from '@material-ui/icons';
 import ButtonBase from '@material-ui/core/ButtonBase';
-// import FormControlLabel from '@material-ui/core/FormControlLabel';
-// import Switch from '@material-ui/core/Switch';
-// import { useHistory } from 'react-router-dom';
 import TextField from '@material-ui/core/TextField';
-// import Button from '@material-ui/core/Button';
 import MenuItem from '@material-ui/core/MenuItem';
+import { multiCall } from '../lib/requests';
+import { GET_PLAYERS, GET_TEAMS } from '../lib/constants';
 
 const useStyles = makeStyles(theme => ({
     pageRoot: {
-        padding: '1rem'
+        padding: '1rem',
+        maxWidth: '640px',
+        margin: '0 auto'
     },
     root: {
         position: 'relative',
@@ -108,11 +107,13 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
-const data = [
-    { id: '1', team: 'RCB', name: 'AB devillers', type: 'batsman', credits: '8' },
-    { id: '1', team: 'MI', name: 'J. Bumrah', type: 'bowler', credits: '9.5' },
-    { id: '1', team: 'RR', name: 'B. Stokes', type: 'all-rounder', credits: '10' }
-]
+async function apiCall(urls) {
+    const res = multiCall(urls).then(r => {
+        console.log('[response]', r)
+        return (r.map(d => (d.status && d.value.success && d.value.res)))
+    });
+    return res;
+}
 
 const PlayerCard = props => {
     const classes = useStyles();
@@ -122,18 +123,18 @@ const PlayerCard = props => {
                 <Card className={classes.root} onClick={e => (props.onCardClick(e, props))}>
                     <CardContent className={classes.cardContent}>
                         <div className={classes.mCardTournament}>
-                            {props.team}
+                            {props.player_team_name}
                         </div>
                         <div className={classes.matchTeams}>
                             <Typography className={classes.nameText} color="textSecondary" gutterBottom>
                                 {props.name}
                             </Typography>
                             <Typography className={classes.creditsText} color="textSecondary" gutterBottom>
-                                {props.credits}
+                                {props.player_credit_points}
                             </Typography>
                         </div>
                         <div className={classes.mCardFoot}>
-                            {props.type}
+                            {props.player_role_type}
                         </div>
                     </CardContent>
                 </Card>
@@ -144,21 +145,34 @@ const PlayerCard = props => {
 
 export default function Players(props) {
     const classes = useStyles();
-    const [listTournaments, setListTournaments] = React.useState([]);
-    const [hideEnded] = React.useState(false);
-    const [pageTitle, setPageTitle] = React.useState('Players');
-    const tournaments = [{ label: 'T1', value: 't1' }, { label: 'T2', value: 't2' }]
+    const [listTeam, setListTeam] = React.useState([]);
+    const [team, setTeam] = React.useState('');
+    const [listPlayer, setListPlayer] = React.useState([]);
+    const [listPlayerFiltered, setListPlayerFiltered] = React.useState([]);
+    const pageTitle = (props.location.state ? props.location.state.name : 'Players');
 
     React.useEffect(() => {
-        setListTournaments(data);
-        if (props.location.state) {
-            setPageTitle(props.location.state.name);
-        }
-    }, [props.location]);
+        const apiRes = apiCall([GET_PLAYERS(), GET_TEAMS()]);
+        apiRes.then(res => {
+            const teams = res[1].map(d => ({ label: d.team_name, value: d.team_name }));
+            teams.push({ label: 'All', value: 'all' });
+            setListPlayer(res[0]);
+            setListTeam(teams);
+            setTeam('all');
+        });
+    }, []);
 
-    // const handleChange = e => {
-    //     setHideEnded(p => !p)
-    // }
+    React.useEffect(() => {
+        if (team === 'all') {
+            setListPlayerFiltered(listPlayer)
+        } else if (team) {
+            setListPlayerFiltered(o => {
+                return (listPlayer.filter(d => (d.player_team_name === team)))
+            })
+        }
+    }, [team]);
+
+    console.log('[render]', team, listPlayer)
 
     const handleCardClick = (e, tdata) => {
         props.history.push({
@@ -184,9 +198,11 @@ export default function Players(props) {
                         select
                         fullWidth
                         size="small"
+                        value={team}
+                        onChange={(e) => { setTeam(e.target.value) }}
                     >
                         {
-                            tournaments.map(option => (
+                            listTeam.map(option => (
                                 <MenuItem key={option.value} value={option.value}>
                                     {option.label}
                                 </MenuItem>
@@ -196,13 +212,10 @@ export default function Players(props) {
                 </div>
                 <Grid container spacing={3}>
                     {
-                        listTournaments.map(item => {
-                            if (hideEnded) {
-                                return (item.status !== 'ended' ? (<PlayerCard key={item.id} {...item} onCardClick={handleCardClick} />) : null)
-                            } else {
-                                return (<PlayerCard key={item.id} {...item} onCardClick={handleCardClick} />)
-                            }
+                        listPlayerFiltered.map(item => {
+                            return (<PlayerCard key={item._id} {...item} onCardClick={handleCardClick} />)
                         })
+
                     }
 
                 </Grid>

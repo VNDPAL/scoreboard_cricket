@@ -6,10 +6,14 @@ import Paper from '@material-ui/core/Paper';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import MenuItem from '@material-ui/core/MenuItem';
+import { multiCall, postCall } from '../lib/requests';
+import { GET_PLAYER_ROLES, GET_TEAMS, SAVE_PLAYER } from '../lib/constants';
 
 const useStyles = makeStyles(theme => ({
     pageRoot: {
-        padding: '1rem'
+        padding: '1rem',
+        maxWidth: '640px',
+        margin: '0 auto'
     },
     root: {
         position: 'relative',
@@ -26,19 +30,66 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
+async function apiCall(urls) {
+    const res = multiCall(urls).then(r => {
+        console.log('[response]', r)
+        return (r.map(d => (d.status && d.value.success && d.value.res)))
+    });
+    return res;
+}
+
+async function apiCallSave(url, pl) {
+    const res = await postCall(url, pl).then(r => {
+        return (true)
+    });
+    return res;
+}
 
 export default function AddPlayer(props) {
     const classes = useStyles();
-    const teams = [{ label: 'delhi capitals', value: 'DC' }, { label: 'mumbai indians', value: 'MI' }]
-    const types = [{ label: 'batsman', value: 'batsman' }, { label: 'bowler', value: 'bowler' }, { label: 'all-rounder', value: 'all-rounder' }]
+    const [listTeam, setListTeam] = React.useState([]);
+    const [listRole, setListRole] = React.useState([]);
+    const [payload, setPayload] = React.useState({
+        player_credit_points: 0,
+        name: '',
+        player_role_type: '',
+        player_team_name: ''
+    })
 
     React.useEffect(() => {
-
+        const apiRes = apiCall([GET_PLAYER_ROLES(), GET_TEAMS()]);
+        apiRes.then(res => {
+            const roles = res[0].map(d => ({ label: d, value: d }));
+            const teams = res[1].map(d => ({ label: d.team_name, value: d.team_name }));
+            setListRole(roles);
+            setListTeam(teams);
+        })
     }, []);
 
-    const handleSubmit = () => {
-
+    const handleChange = (val, type) => {
+        setPayload(o => {
+            switch (type) {
+                case 'player_credit_points': return ({ ...o, ...{ player_credit_points: val } });
+                case 'name': return ({ ...o, ...{ name: val } });
+                case 'player_role_type': return ({ ...o, ...{ player_role_type: val } });
+                case 'player_team_name': return ({ ...o, ...{ player_team_name: val } });
+                default: return (o)
+            }
+        })
     }
+
+    const handleSubmit = () => {
+        const postRes = apiCallSave(SAVE_PLAYER(), payload);
+        postRes.then((d) => {
+            console.log('[respmpost]', d)
+            if (d) {
+                props.history.push({
+                    pathname: '/players'
+                });
+            }
+        });
+    }
+
 
     return (
         <>
@@ -56,6 +107,8 @@ export default function AddPlayer(props) {
                             variant='outlined'
                             fullWidth
                             size="small"
+                            value={payload.name}
+                            onChange={(e) => handleChange(e.target.value, 'name')}
                         />
                         <TextField
                             id="team"
@@ -65,9 +118,11 @@ export default function AddPlayer(props) {
                             select
                             fullWidth
                             size="small"
+                            value={payload.player_team_name}
+                            onChange={(e) => handleChange(e.target.value, 'player_team_name')}
                         >
                             {
-                                teams.map(option => (
+                                listTeam.map(option => (
                                     <MenuItem key={option.value} value={option.value}>
                                         {option.label}
                                     </MenuItem>
@@ -82,9 +137,11 @@ export default function AddPlayer(props) {
                             select
                             fullWidth
                             size="small"
+                            value={payload.player_role_type}
+                            onChange={(e) => handleChange(e.target.value, 'player_role_type')}
                         >
                             {
-                                types.map(option => (
+                                listRole.map(option => (
                                     <MenuItem key={option.value} value={option.value}>
                                         {option.label}
                                     </MenuItem>
@@ -102,6 +159,8 @@ export default function AddPlayer(props) {
                             variant='outlined'
                             fullWidth
                             size="small"
+                            value={payload.player_credit_points}
+                            onChange={(e) => handleChange(e.target.value, 'player_credit_points')}
                         />
 
 

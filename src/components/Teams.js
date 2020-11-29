@@ -6,19 +6,18 @@ import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
-// import { CalendarToday } from '@material-ui/icons';
 import ButtonBase from '@material-ui/core/ButtonBase';
-// import FormControlLabel from '@material-ui/core/FormControlLabel';
-// import Switch from '@material-ui/core/Switch';
-// import { useHistory } from 'react-router-dom';
-// import TextField from '@material-ui/core/TextField';
-// import Button from '@material-ui/core/Button';
-// import MenuItem from '@material-ui/core/MenuItem';
+import TextField from '@material-ui/core/TextField';
+import MenuItem from '@material-ui/core/MenuItem';
 import GradeIcon from '@material-ui/icons/Grade';
+import { multiCall } from '../lib/requests';
+import { GET_TOURNAMENT, GET_TEAMS } from '../lib/constants';
 
 const useStyles = makeStyles(theme => ({
     pageRoot: {
-        padding: '1rem'
+        padding: '1rem',
+        maxWidth: '640px',
+        margin: '0 auto'
     },
     root: {
         position: 'relative',
@@ -101,11 +100,14 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
-const data = [
-    { id: '1', name: 'RCB', rating: 2, fullName: "royal challengers banglore" },
-    { id: '2', name: 'DC', rating: 5, fullName: "delhi capitals" },
-    { id: '3', name: 'KXIP', rating: 4, fullName: "kings XI punjab" }
-]
+async function apiCall(urls) {
+    const res = multiCall(urls).then(r => {
+        console.log('[response]', r)
+        return (r.map(d => (d.status && d.value.success && d.value.res)))
+    });
+    return res;
+}
+
 
 const TeamCard = props => {
     const classes = useStyles();
@@ -116,11 +118,11 @@ const TeamCard = props => {
                 <Card className={classes.root} onClick={e => (props.onCardClick(e, props))}>
                     <CardContent className={classes.cardContent}>
                         <div className={classes.mCardTournament}>
-                            {props.fullName}
+                            {props.team_name}
                         </div>
                         <div className={classes.matchTeams}>
                             <Typography className={classes.title} color="textSecondary" gutterBottom>
-                                {props.name}
+                                {props.short_name}
                             </Typography>
                         </div>
                         <div className={classes.mCardFoot}>
@@ -142,20 +144,21 @@ const TeamCard = props => {
 export default function Teams(props) {
     const classes = useStyles();
     const [listTournaments, setListTournaments] = React.useState([]);
-    const [hideEnded] = React.useState(false);
-    const [pageTitle, setPageTitle] = React.useState('Teams');
-    // const tournaments = [{ label: 'T1', value: 't1' }, { label: 'T2', value: 't2' }]
+    const [listTeam, setListTeam] = React.useState([]);
+    const [trn, setTrn] = React.useState('');
+    const pageTitle = (props.location.state ? props.location.state.name : 'Teams');
 
     React.useEffect(() => {
-        setListTournaments(data);
-        if (props.location.state) {
-            setPageTitle(props.location.state.name);
-        }
-    }, [props.location]);
-
-    // const handleChange = e => {
-    //     setHideEnded(p => !p)
-    // }
+        const apiRes = apiCall([GET_TOURNAMENT(), GET_TEAMS()]);
+        apiRes.then(res => {
+            const trn = res[0].map(d => ({ label: d.tournament_name, value: d.tournament_name }));
+            trn.push({ label: 'All', value: 'all' });
+            setListTournaments(trn);
+            setListTeam(res[1]);
+            setTrn('all');
+            console.log('[response c]', res)
+        });
+    }, []);
 
     const handleCardClick = (e, tdata) => {
         props.history.push({
@@ -173,15 +176,30 @@ export default function Teams(props) {
             <Header title={pageTitle} rightLink={{ to: '/teams/add', label: 'add' }} />
             <div className={classes.pageRoot}>
                 <div className={classes.filterRow}>
+                    <TextField
+                        id="trn"
+                        label="Tournament"
+                        className={classes.textField}
+                        variant='outlined'
+                        select
+                        fullWidth
+                        size="small"
+                        value={trn}
+                        onChange={(e) => { setTrn(e.target.value) }}
+                    >
+                        {
+                            listTournaments.map(option => (
+                                <MenuItem key={option.value} value={option.value}>
+                                    {option.label}
+                                </MenuItem>
+                            ))
+                        }
+                    </TextField>
                 </div>
                 <Grid container spacing={3}>
                     {
-                        listTournaments.map(item => {
-                            if (hideEnded) {
-                                return (item.status !== 'ended' ? (<TeamCard key={item.id} {...item} onCardClick={handleCardClick} />) : null)
-                            } else {
-                                return (<TeamCard key={item.id} {...item} onCardClick={handleCardClick} />)
-                            }
+                        listTeam.map(item => {
+                            return (<TeamCard key={item._id} {...item} onCardClick={handleCardClick} />)
                         })
                     }
 

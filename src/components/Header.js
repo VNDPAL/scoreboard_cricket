@@ -37,7 +37,7 @@ const useStyles = makeStyles((theme) => ({
 export default function Header(props) {
     const classes = useStyles();
     const history = useHistory();
-    console.log('[render header]', history);
+
     const onLogoClick = () => {
         history.push('/');
     }

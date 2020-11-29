@@ -6,18 +6,17 @@ import Card from '@material-ui/core/Card';
 import CardContent from '@material-ui/core/CardContent';
 import Typography from '@material-ui/core/Typography';
 import Grid from '@material-ui/core/Grid';
-// import { CalendarToday } from '@material-ui/icons';
 import ButtonBase from '@material-ui/core/ButtonBase';
-// import FormControlLabel from '@material-ui/core/FormControlLabel';
-// import Switch from '@material-ui/core/Switch';
-// import { useHistory } from 'react-router-dom';
 import TextField from '@material-ui/core/TextField';
-// import Button from '@material-ui/core/Button';
 import MenuItem from '@material-ui/core/MenuItem';
+import { multiCall } from '../lib/requests';
+import { GET_MATCH, GET_TOURNAMENT } from '../lib/constants';
 
 const useStyles = makeStyles(theme => ({
     pageRoot: {
-        padding: '1rem'
+        padding: '1rem',
+        maxWidth: '640px',
+        margin: '0 auto'
     },
     root: {
         position: 'relative',
@@ -100,11 +99,13 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
-const data = [
-    { id: '1', team1: 'RCB', team2: 'MI', startTime: '10/01/2020', tournament: 'Tournament-1', contestCount: 4 },
-    { id: '2', team1: 'DC', team2: 'SRH', startTime: '10/01/2020', tournament: 'Tournament-1', contestCount: 2 },
-    { id: '3', team1: 'KXIP', team2: 'RR', startTime: '10/01/2020', tournament: 'Tournament-1', contestCount: 1 }
-]
+async function apiCall(urls) {
+    const res = multiCall(urls).then(r => {
+        console.log('[response]', r)
+        return (r.map(d => (d.status && d.value.success && d.value.res)))
+    });
+    return res;
+}
 
 const MtCard = props => {
     const classes = useStyles();
@@ -138,20 +139,21 @@ const MtCard = props => {
 export default function Matches(props) {
     const classes = useStyles();
     const [listTournaments, setListTournaments] = React.useState([]);
-    const [hideEnded] = React.useState(false);
-    const [pageTitle, setPageTitle] = React.useState('Matches');
-    const tournaments = [{ label: 'T1', value: 't1' }, { label: 'T2', value: 't2' }]
+    const [listMatches, setListMatches] = React.useState([]);
+    const [trn, setTrn] = React.useState('');
+    const pageTitle = (props.location.state ? props.location.state.name : 'Matches');
 
     React.useEffect(() => {
-        setListTournaments(data);
-        if (props.location.state) {
-            setPageTitle(props.location.state.name);
-        }
-    }, [props.location]);
+        const apiRes = apiCall([GET_MATCH(), GET_TOURNAMENT()]);
+        apiRes.then(res => {
+            const trn = res[1].map(d => ({ label: d.tournament_name, value: d._id }));
+            trn.push({ label: 'All', value: 'all' });
+            setListMatches(res[0]);
+            setListTournaments(trn);
+            setTrn('all');
+        });
+    }, []);
 
-    // const handleChange = e => {
-    //     setHideEnded(p => !p)
-    // }
 
     const handleCardClick = (e, tdata) => {
         props.history.push({
@@ -177,9 +179,11 @@ export default function Matches(props) {
                         select
                         fullWidth
                         size="small"
+                        value={trn}
+                        onChange={(e) => { setTrn(e.target.value) }}
                     >
                         {
-                            tournaments.map(option => (
+                            listTournaments.map(option => (
                                 <MenuItem key={option.value} value={option.value}>
                                     {option.label}
                                 </MenuItem>
@@ -189,12 +193,8 @@ export default function Matches(props) {
                 </div>
                 <Grid container spacing={3}>
                     {
-                        listTournaments.map(item => {
-                            if (hideEnded) {
-                                return (item.status !== 'ended' ? (<MtCard key={item.id} {...item} onCardClick={handleCardClick} />) : null)
-                            } else {
-                                return (<MtCard key={item.id} {...item} onCardClick={handleCardClick} />)
-                            }
+                        listMatches.map(item => {
+                            return (<MtCard key={item._id} {...item} onCardClick={handleCardClick} />)
                         })
                     }
 

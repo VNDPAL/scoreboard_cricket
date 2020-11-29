@@ -5,11 +5,14 @@ import { makeStyles } from '@material-ui/core/styles';
 import Paper from '@material-ui/core/Paper';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
-// import MenuItem from '@material-ui/core/MenuItem';
+import { SAVE_TEAM } from '../lib/constants';
+import { postCall } from '../lib/requests';
 
 const useStyles = makeStyles(theme => ({
     pageRoot: {
-        padding: '1rem'
+        padding: '1rem',
+        maxWidth: '640px',
+        margin: '0 auto'
     },
     root: {
         position: 'relative',
@@ -26,17 +29,42 @@ const useStyles = makeStyles(theme => ({
     }
 }));
 
+async function apiCall(url, pl) {
+    const res = await postCall(url, pl).then(r => {
+        return (true)
+    });
+    return res;
+}
 
 export default function AddTeam(props) {
     const classes = useStyles();
-    // const players = [{ label: 'delhi capitals', value: 'DC' }, { label: 'mumbai indians', value: 'MI' }];
+    const [payload, setPayload] = React.useState({
+        team_name: '',
+        short_name: '',
+        rating: 1
+    });
 
-    React.useEffect(() => {
-
-    }, []);
+    const handleChange = (val, type) => {
+        setPayload(o => {
+            switch (type) {
+                case 'team_name': return ({ ...o, ...{ team_name: val } });
+                case 'short_name': return ({ ...o, ...{ short_name: val } });
+                case 'rating': return ({ ...o, ...{ rating: +val } });
+                default: return (o)
+            }
+        })
+    }
 
     const handleSubmit = () => {
-
+        const postRes = apiCall(SAVE_TEAM(), payload);
+        postRes.then((d) => {
+            console.log('[respmpost]', d)
+            if (d) {
+                props.history.push({
+                    pathname: '/teams'
+                });
+            }
+        });
     }
 
     return (
@@ -55,6 +83,8 @@ export default function AddTeam(props) {
                             variant='outlined'
                             fullWidth
                             size="small"
+                            value={payload.team_name}
+                            onChange={(e) => { handleChange(e.target.value, 'team_name') }}
                         />
                         <TextField
                             id="sname"
@@ -66,6 +96,21 @@ export default function AddTeam(props) {
                             variant='outlined'
                             fullWidth
                             size="small"
+                            value={payload.short_name}
+                            onChange={(e) => { handleChange(e.target.value, 'short_name') }}
+                        />
+                        <TextField
+                            id="rat"
+                            label="Ratings"
+                            className={classes.textField}
+                            InputLabelProps={{
+                                shrink: true,
+                            }}
+                            variant='outlined'
+                            fullWidth
+                            size="small"
+                            value={payload.rating}
+                            onChange={(e) => { handleChange(e.target.value, 'rating') }}
                         />
 
 
