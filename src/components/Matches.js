@@ -9,8 +9,8 @@ import Grid from '@material-ui/core/Grid';
 import ButtonBase from '@material-ui/core/ButtonBase';
 import TextField from '@material-ui/core/TextField';
 import MenuItem from '@material-ui/core/MenuItem';
-import { multiCall } from '../lib/requests';
-import { GET_MATCH, GET_TOURNAMENT } from '../lib/constants';
+import { multiCall, postCall } from '../lib/requests';
+import { GET_MATCH, GET_TOURNAMENT, START_MATCH } from '../lib/constants';
 
 const useStyles = makeStyles(theme => ({
     pageRoot: {
@@ -102,28 +102,29 @@ const useStyles = makeStyles(theme => ({
 async function apiCall(urls) {
     const res = multiCall(urls).then(r => {
         console.log('[response]', r)
-        return (r.map(d => (d.status && d.value.success && d.value.res)))
+        return (r.map(d => (d.status && d.value.success && d.value.res || [])))
     });
     return res;
 }
 
 const MtCard = props => {
     const classes = useStyles();
+    const tm = useCountdown(props.startDate);
     return (
         <Grid item xs={12} sm={6} md={4}>
             <ButtonBase className={classes.w100}>
                 <Card className={classes.root} onClick={e => (props.onCardClick(e, props))}>
                     <CardContent className={classes.cardContent}>
                         <div className={classes.mCardTournament}>
-                            {props.tournament}
+                            {props.tournamentId.tournament_name}
                         </div>
                         <div className={classes.matchTeams}>
                             <Typography className={classes.title} color="textSecondary" gutterBottom>
-                                {props.team1}
+                                {props.detailsTeam1.short_name}
                             </Typography>
-                            <span className={classes.timeLeft}>10:20:00</span>
+                            <span className={classes.timeLeft}>{tm.join(' : ')}</span>
                             <Typography className={classes.title} color="textSecondary" gutterBottom>
-                                {props.team2}
+                                {props.detailsTeam2.short_name}
                             </Typography>
                         </div>
                         <div className={classes.mCardFoot}>
@@ -140,29 +141,44 @@ export default function Matches(props) {
     const classes = useStyles();
     const [listTournaments, setListTournaments] = React.useState([]);
     const [listMatches, setListMatches] = React.useState([]);
+    const [listMatchesFiltered, setListMatchesFiltered] = React.useState([]);
     const [trn, setTrn] = React.useState('');
     const pageTitle = (props.location.state ? props.location.state.name : 'Matches');
-
+    console.log(listMatchesFiltered);
     React.useEffect(() => {
         const apiRes = apiCall([GET_MATCH(), GET_TOURNAMENT()]);
         apiRes.then(res => {
-            const trn = res[1].map(d => ({ label: d.tournament_name, value: d._id }));
-            trn.push({ label: 'All', value: 'all' });
+            const trnx = res[1].map(d => ({ label: d.tournament_name, value: d._id }));
+            trnx.push({ label: 'All', value: 'all' });
+            console.log('[new]: ', res)
             setListMatches(res[0]);
-            setListTournaments(trn);
+            setListTournaments(trnx);
             setTrn('all');
         });
     }, []);
 
+    React.useEffect(() => {
+        if (trn === 'all') {
+            setListMatchesFiltered(listMatches)
+        } else if (trn) {
+            setListMatchesFiltered(o => {
+                return (listMatches.filter(d => (d.tournamentId.tournament_name === trn)))
+            })
+        }
+    }, [trn, listMatches]);
 
     const handleCardClick = (e, tdata) => {
-        props.history.push({
-            pathname: '/match',
-            state: {
-                team1: tdata.team1,
-                team2: tdata.team2
+        postCall(START_MATCH(), { _id: tdata._id }).then(res => {
+            if (res.success && res.data) {
+                props.history.push({
+                    pathname: '/match',
+                    state: {
+                        team1: tdata.team1,
+                        team2: tdata.team2
+                    }
+                });
             }
-        });
+        })
         console.log('[props]', tdata)
     }
 
@@ -202,4 +218,31 @@ export default function Matches(props) {
             </div>
         </>
     )
+}
+
+function useCountdown(dt, callback) {
+    const [time, setTime] = React.useState([0, 0, 0, 0]);
+    const second = 1000,
+        minute = second * 60,
+        hour = minute * 60,
+        day = hour * 24;
+
+    let countDown = new Date(dt || '10/10/2050').getTime(),
+        x = setInterval(function () {
+
+            let now = new Date().getTime(),
+                distance = countDown - now;
+
+            //do something later when date is reached
+            if (distance < 0) {
+                clearInterval(x);
+                // return null;  
+                callback && callback();
+            } else {
+                setTime([Math.floor(distance / (day)), Math.floor((distance % (day)) / (hour)), Math.floor((distance % (hour)) / (minute)), Math.floor((distance % (minute)) / second)]);
+            }
+            //seconds
+        }, 0);
+
+    return time;
 }

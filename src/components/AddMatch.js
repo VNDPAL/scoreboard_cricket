@@ -7,7 +7,7 @@ import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import MenuItem from '@material-ui/core/MenuItem';
 import { multiCall, postCall } from '../lib/requests';
-import { GET_TOURNAMENT, GET_TEAMS, SAVE_MATCH } from '../lib/constants';
+import { GET_TOURNAMENT, GET_ACTIVE_TEAMS, SAVE_MATCH } from '../lib/constants';
 import { format } from 'date-fns';
 
 const useStyles = makeStyles(theme => ({
@@ -58,7 +58,7 @@ export default function AddMatch(props) {
     });
 
     React.useEffect(() => {
-        const apiRes = apiCall([GET_TEAMS(), GET_TOURNAMENT()]);
+        const apiRes = apiCall([GET_ACTIVE_TEAMS(), GET_TOURNAMENT()]);
         apiRes.then(res => {
             const teams = res[0].map(d => ({ label: d.team_name, value: d.team_name }));
             const trn = res[1].map(d => ({ label: d.tournament_name, value: d._id }));

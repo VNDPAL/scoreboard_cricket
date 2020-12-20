@@ -9,8 +9,11 @@ import Grid from '@material-ui/core/Grid';
 import ButtonBase from '@material-ui/core/ButtonBase';
 import TextField from '@material-ui/core/TextField';
 import MenuItem from '@material-ui/core/MenuItem';
-import { multiCall } from '../lib/requests';
-import { GET_PLAYERS, GET_TEAMS } from '../lib/constants';
+import { multiCall, putCall } from '../lib/requests';
+import { GET_PLAYERS, GET_TEAMS, GET_PLAYERS_BY_TEAM, UPDATE_TEAM_STATUS } from '../lib/constants';
+import MaterialTable from 'material-table';
+import Paper from '@material-ui/core/Paper';
+import { Button } from '@material-ui/core';
 
 const useStyles = makeStyles(theme => ({
     pageRoot: {
@@ -104,6 +107,20 @@ const useStyles = makeStyles(theme => ({
         fontSize: 'small',
         padding: '0.5rem',
         backgroundColor: '#f2f2f2'
+    },
+    playingStatus: {
+        position: 'absolute',
+        right: '10px',
+        bottom: '10px',
+        width: '10px',
+        height: '10px',
+        borderRadius: '10px'
+    },
+    playing: {
+        backgroundColor: '#4caf50'
+    },
+    notplaying: {
+        backgroundColor: '#f44336'
     }
 }));
 
@@ -115,34 +132,6 @@ async function apiCall(urls) {
     return res;
 }
 
-const PlayerCard = props => {
-    const classes = useStyles();
-    return (
-        <Grid item xs={12} sm={6} md={4}>
-            <ButtonBase className={classes.w100}>
-                <Card className={classes.root} onClick={e => (props.onCardClick(e, props))}>
-                    <CardContent className={classes.cardContent}>
-                        <div className={classes.mCardTournament}>
-                            {props.player_team_name}
-                        </div>
-                        <div className={classes.matchTeams}>
-                            <Typography className={classes.nameText} color="textSecondary" gutterBottom>
-                                {props.name}
-                            </Typography>
-                            <Typography className={classes.creditsText} color="textSecondary" gutterBottom>
-                                {props.player_credit_points}
-                            </Typography>
-                        </div>
-                        <div className={classes.mCardFoot}>
-                            {props.player_role_type}
-                        </div>
-                    </CardContent>
-                </Card>
-            </ButtonBase>
-        </Grid>
-    )
-}
-
 export default function Players(props) {
     const classes = useStyles();
     const [listTeam, setListTeam] = React.useState([]);
@@ -150,75 +139,70 @@ export default function Players(props) {
     const [listPlayer, setListPlayer] = React.useState([]);
     const [listPlayerFiltered, setListPlayerFiltered] = React.useState([]);
     const pageTitle = (props.location.state ? props.location.state.name : 'Players');
+    const selectedTeam = (props.location.state ? props.location.state.team : 'all');
+    const columns = [{ title: 'Name', field: 'name' },
+    { title: 'Role', field: 'player_role_type' },
+    { title: 'Team', field: 'player_team_name' },
+    {
+        title: 'Playing', field: 'status', render: rowData => {
+            return (<span>{rowData.status ? 'Yes' : 'No'}</span>)
+        }
+    },
+    { title: 'credits', field: 'player_credit_points' },
+    ];
 
     React.useEffect(() => {
-        const apiRes = apiCall([GET_PLAYERS(), GET_TEAMS()]);
+        const apiRes = apiCall([GET_PLAYERS_BY_TEAM(selectedTeam), GET_TEAMS()]);
         apiRes.then(res => {
             const teams = res[1].map(d => ({ label: d.team_name, value: d.team_name }));
             teams.push({ label: 'All', value: 'all' });
             setListPlayer(res[0]);
             setListTeam(teams);
-            setTeam('all');
+            setTeam(selectedTeam);
         });
     }, []);
 
-    React.useEffect(() => {
-        if (team === 'all') {
-            setListPlayerFiltered(listPlayer)
-        } else if (team) {
-            setListPlayerFiltered(o => {
-                return (listPlayer.filter(d => (d.player_team_name === team)))
-            })
-        }
-    }, [team, listPlayer]);
 
     console.log('[render]', team, listPlayer)
 
-    const handleCardClick = (e, tdata) => {
+    const handlerRowClick = (e, tdata) => {
         props.history.push({
-            pathname: '/match',
+            pathname: '/players/add',
             state: {
-                team1: tdata.team1,
-                team2: tdata.team2
+                info: JSON.stringify(tdata)
             }
         });
         console.log('[props]', tdata)
+    }
+
+    const handleSaveTeam = () => {
+        putCall(UPDATE_TEAM_STATUS(), { player_team_name: selectedTeam }).then(res => {
+
+        })
     }
 
     return (
         <>
             <Header title={pageTitle} rightLink={{ to: '/players/add', label: 'add' }} />
             <div className={classes.pageRoot}>
-                <div className={classes.filterRow}>
-                    <TextField
-                        id="trn"
-                        label="Team"
-                        className={classes.textField}
-                        variant='outlined'
-                        select
-                        fullWidth
-                        size="small"
-                        value={team}
-                        onChange={(e) => { setTeam(e.target.value) }}
-                    >
-                        {
-                            listTeam.map(option => (
-                                <MenuItem key={option.value} value={option.value}>
-                                    {option.label}
-                                </MenuItem>
-                            ))
-                        }
-                    </TextField>
-                </div>
-                <Grid container spacing={3}>
-                    {
-                        listPlayerFiltered.map(item => {
-                            return (<PlayerCard key={item._id} {...item} onCardClick={handleCardClick} />)
-                        })
-
-                    }
-
-                </Grid>
+                <Paper elevation={2}>
+                    <MaterialTable
+                        title={selectedTeam}
+                        columns={columns}
+                        data={listPlayer}
+                        options={{ rowStyle: { fontFamily: "Roboto, sans-serif" }, paging: false }}
+                        actions={[
+                            {
+                                icon: 'edit',
+                                tooltip: 'edit player',
+                                onClick: (event, rowData) => handlerRowClick(event, rowData)
+                            }
+                        ]}
+                    />
+                    <div>
+                        <Button variant="contained" onClick={handleSaveTeam}>Save</Button>
+                    </div>
+                </Paper>
             </div>
         </>
     )

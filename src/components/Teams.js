@@ -162,10 +162,9 @@ export default function Teams(props) {
 
     const handleCardClick = (e, tdata) => {
         props.history.push({
-            pathname: '/match',
+            pathname: '/players',
             state: {
-                team1: tdata.team1,
-                team2: tdata.team2
+                team: tdata.team_name
             }
         });
         console.log('[props]', tdata)

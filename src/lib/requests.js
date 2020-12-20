@@ -44,6 +44,27 @@ export const postCall = async (url, payload, opts) => {
         })
     }
 }
+export const putCall = async (url, payload, opts) => {
+    try {
+        const res = await axios.put(url, payload, opts);
+        return ({
+            success: true,
+            message: 'Success',
+            data: res.data.res,
+            status: res.status
+        })
+
+    } catch (err) {
+        const msg = err.response ? err.response.data.message : err.message;
+        const code = err.response ? err.response.status : 400;
+        return ({
+            success: false,
+            message: msg,
+            data: null,
+            status: code
+        })
+    }
+}
 
 export const multiCall = async (urls, opts) => {
     const calls = urls.map(url => (axios.get(url, opts)));

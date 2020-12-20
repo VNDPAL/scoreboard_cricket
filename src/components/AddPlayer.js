@@ -6,8 +6,10 @@ import Paper from '@material-ui/core/Paper';
 import TextField from '@material-ui/core/TextField';
 import Button from '@material-ui/core/Button';
 import MenuItem from '@material-ui/core/MenuItem';
-import { multiCall, postCall } from '../lib/requests';
+import { multiCall, postCall, putCall } from '../lib/requests';
 import { GET_PLAYER_ROLES, GET_TEAMS, SAVE_PLAYER } from '../lib/constants';
+import FormControlLabel from '@material-ui/core/FormControlLabel';
+import Switch from '@material-ui/core/Switch';
 
 const useStyles = makeStyles(theme => ({
     pageRoot: {
@@ -45,6 +47,13 @@ async function apiCallSave(url, pl) {
     return res;
 }
 
+async function apiCallUpdate(url, pl) {
+    const res = await putCall(url, pl).then(r => {
+        return (true)
+    });
+    return res;
+}
+
 export default function AddPlayer(props) {
     const classes = useStyles();
     const [listTeam, setListTeam] = React.useState([]);
@@ -53,8 +62,10 @@ export default function AddPlayer(props) {
         player_credit_points: 0,
         name: '',
         player_role_type: '',
-        player_team_name: ''
-    })
+        player_team_name: '',
+        status: false
+    });
+    const [isEdit, setIsEdit] = React.useState(false);
 
     React.useEffect(() => {
         const apiRes = apiCall([GET_PLAYER_ROLES(), GET_TEAMS()]);
@@ -66,6 +77,23 @@ export default function AddPlayer(props) {
         })
     }, []);
 
+    React.useEffect(() => {
+        const info = props.location.state && props.location.state.info ? JSON.parse(props.location.state.info) : null;
+        if (info) {
+            setPayload({
+                player_credit_points: info.player_credit_points,
+                name: info.name,
+                player_role_type: info.player_role_type,
+                player_team_name: info.player_team_name,
+                _id: info._id,
+                status: info.status
+            })
+            setIsEdit(true)
+        }
+        console.log('[data to print]', info)
+    }, [props.location.state]);
+
+
     const handleChange = (val, type) => {
         setPayload(o => {
             switch (type) {
@@ -73,13 +101,14 @@ export default function AddPlayer(props) {
                 case 'name': return ({ ...o, ...{ name: val } });
                 case 'player_role_type': return ({ ...o, ...{ player_role_type: val } });
                 case 'player_team_name': return ({ ...o, ...{ player_team_name: val } });
+                case 'status': return ({ ...o, ...{ status: val } });
                 default: return (o)
             }
         })
     }
 
     const handleSubmit = () => {
-        const postRes = apiCallSave(SAVE_PLAYER(), payload);
+        const postRes = isEdit ? apiCallUpdate(SAVE_PLAYER(), payload) : apiCallSave(SAVE_PLAYER(), payload);
         postRes.then((d) => {
             console.log('[respmpost]', d)
             if (d) {
@@ -162,6 +191,14 @@ export default function AddPlayer(props) {
                             value={payload.player_credit_points}
                             onChange={(e) => handleChange(e.target.value, 'player_credit_points')}
                         />
+                        <div>{
+                            isEdit ? (
+                                <FormControlLabel style={{ marginBottom: '1.5rem' }}
+                                    control={<Switch checked={payload.status} onChange={(e) => handleChange(e.target.checked, 'status')} name="status" />}
+                                    label="Playing XI"
+                                />
+                            ) : null
+                        }</div>
 
 
                         <Button variant="contained" color="secondary" onClick={handleSubmit}>
